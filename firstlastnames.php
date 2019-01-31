@@ -79,7 +79,12 @@ class plgSystemFirstLastNames extends JPlugin
                 $data->lastname  = $results[1][1];
             }
 
-            $data->name = $data->firstname . ' ' . $data->lastname;
+            $name = '';
+            if ($data->firstname != '' && $data->lastname != '') {
+                $name = $data->firstname . ' ' . $data->lastname;
+            }
+            $data->name = $name;
+
             return true;
         }
 
