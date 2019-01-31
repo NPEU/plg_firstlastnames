@@ -187,7 +187,7 @@ class plgSystemFirstLastNames extends JPlugin
     {
         $user_id = JArrayHelper::getValue($user, 'id', 0, 'int');
 
-        if ($user_id && $result) {
+        if ($user_id && $success) {
             $db = JFactory::getDbo();
             // On activation, the lastname field won't be resent with the data,
             // so retrieve it from the profile form and set it:
