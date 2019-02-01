@@ -28,6 +28,20 @@ class plgSystemFirstLastNames extends JPlugin
         $this->loadLanguage();
     }*/
 
+    /**
+     * After initialise.
+     *
+     * @return  void
+     */
+    public function onAfterInitialise()
+    {
+        $input = JFactory::getApplication()->input;
+        $requestData = $input->post->get('jform', array(), 'array');
+        if (!empty($requestData['firstname']) && !empty($requestData['lastname'])) {
+            $requestData['name'] = $requestData['firstname'] . ' ' . $requestData['lastname'];
+            JFactory::getApplication()->input->post->set('jform', $requestData);
+        }
+    }
 
     /**
      * Runs on content preparation
