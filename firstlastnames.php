@@ -38,7 +38,7 @@ class plgSystemFirstLastNames extends JPlugin
         $input = JFactory::getApplication()->input;
         $requestData = $input->post->get('jform', array(), 'array');
         if (!empty($requestData['firstname']) && !empty($requestData['lastname'])) {
-            $requestData['name'] = $requestData['firstname'] . ' ' . $requestData['lastname'];
+            $requestData['name'] = trim($requestData['firstname']) . ' ' . trim($requestData['lastname']);
             JFactory::getApplication()->input->post->set('jform', $requestData);
         }
     }
@@ -208,7 +208,7 @@ class plgSystemFirstLastNames extends JPlugin
 
         if ($user_id && $success) {
             $db = JFactory::getDbo();
-            // On activation, the lastname field won't be resent with the data,
+            // On activation, the lastname field won't be present within the data,
             // so retrieve it from the profile form and set it:
             if (!isset($user['lastname'])) {
                 // Get profile:
@@ -231,7 +231,7 @@ class plgSystemFirstLastNames extends JPlugin
 
             try {
                 // Concatenate name and lastname ad update table:
-                $fullname = $user['firstname'] . ' ' . $user['lastname'];
+                $fullname = trim($user['firstname']) . ' ' . trim($user['lastname']);
                 $sql = 'UPDATE #__users SET name = "' . $fullname . '" WHERE id = '.$user_id . ';';
 
                 $db->setQuery($sql);
