@@ -3,30 +3,72 @@
  * @package     Joomla.Plugin
  * @subpackage  System.FirstLastNames
  *
- * @copyright   Copyright (C) NPEU 2019.
+ * @copyright   Copyright (C) NPEU 2023.
  * @license     MIT License; see LICENSE.md
  */
 
+namespace NPEU\Plugin\System\FirstLastNames\Extension;
+
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\MVC\View\GenericDataException;
+use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\Event\Event;
+use Joomla\Event\SubscriberInterface;
+use Joomla\Utilities\ArrayHelper;
+
 /**
- * Adds first and last name support.
+ * First and Last names plug-in
  */
-class plgSystemFirstLastNames extends JPlugin
+class FirstLastNames extends CMSPlugin implements SubscriberInterface
 {
-    protected $autoloadLanguage = true;
+    protected $autoloadLanguage = false;
 
     /**
-     * Constructor.
+     * An internal flag whether plugin should listen any event.
      *
-     * @param   object  &$subject  The object to observe.
-     * @param   array   $config    An optional associative array of configuration settings.
+     * @var bool
+     *
+     * @since   4.3.0
      */
-    /*public function __construct(& $subject, $config)
+    protected static $enabled = false;
+
+    /**
+     * Constructor
+     *
+     */
+    public function __construct($subject, array $config = [], bool $enabled = true)
     {
+        // The above enabled parameter was taken from teh Guided Tour plugin but it ir always seems
+        // to be false so I'm not sure where this param is passed from. Overriding it for now.
+        $enabled = true;
+
+        #$this->loadLanguage();
+        $this->autoloadLanguage = $enabled;
+        self::$enabled          = $enabled;
+
         parent::__construct($subject, $config);
-        $this->loadLanguage();
-    }*/
+    }
+
+    /**
+     * function for getSubscribedEvents : new Joomla 4 feature
+     *
+     * @return array
+     *
+     * @since   4.3.0
+     */
+    public static function getSubscribedEvents(): array
+    {
+        return self::$enabled ? [
+            'onAfterInitialise'    => 'onAfterInitialise',
+            'onContentPrepareData' => 'onContentPrepareData',
+            'onContentPrepareForm' => 'onContentPrepareForm',
+            'onUserAfterSave'      => 'onUserAfterSave',
+            'onUserAfterDelete'    => 'onUserAfterDelete'
+        ] : [];
+    }
 
     /**
      * After initialise.
@@ -35,11 +77,11 @@ class plgSystemFirstLastNames extends JPlugin
      */
     public function onAfterInitialise()
     {
-        $input = JFactory::getApplication()->input;
-        $requestData = $input->post->get('jform', array(), 'array');
+        $input = Factory::getApplication()->input;
+        $requestData = $input->post->get('jform', [], 'array');
         if (!empty($requestData['firstname']) && !empty($requestData['lastname'])) {
             $requestData['name'] = trim($requestData['firstname']) . ' ' . trim($requestData['lastname']);
-            JFactory::getApplication()->input->post->set('jform', $requestData);
+            Factory::getApplication()->input->post->set('jform', $requestData);
         }
     }
 
@@ -51,17 +93,20 @@ class plgSystemFirstLastNames extends JPlugin
      *
      * @return  boolean
      */
-    public function onContentPrepareData($context, $data)
-    {
+    public function onContentPrepareData(Event $event) {
+        $args    = $event->getArguments();
+        $context = $args[0];
+        $data    = $args[1];
+
         // Check we are manipulating a valid form.
-        if (!in_array($context, array('com_users.profile', 'com_users.user', 'com_users.registration', 'com_admin.profile'))) {
+        if (!in_array($context, ['com_users.profile', 'com_users.user', 'com_users.registration', 'com_admin.profile'])) {
             return true;
         }
         // Profile view only shows name as it's not a form, so unless it's
         // overidden in a template (possible), we don't want to split the names
         // out.
-        /*$layout = JFactory::getApplication()->input->get('layout');
-        if (!JFactory::getApplication()->input->get('layout') || JFactory::getApplication()->input->get('layout') != 'edit') {
+        /*$layout = Factory::getApplication()->input->get('layout');
+        if (!Factory::getApplication()->input->get('layout') || Factory::getApplication()->input->get('layout') != 'edit') {
             return true;
         }*/
         if (is_object($data)) {
@@ -75,7 +120,7 @@ class plgSystemFirstLastNames extends JPlugin
 
             if (empty($data->firstname) && empty($data->lastname) && $user_id > 0) {
                 // Load the profile data from the database.
-                $db = JFactory::getDbo();
+                $db = Factory::getDbo();
                 $sql = 'SELECT profile_key, profile_value FROM #__user_profiles ' .
                        'WHERE user_id = '.(int) $user_id . " AND profile_key LIKE 'firstlastnames.%' " .
                        'ORDER BY ordering';
@@ -85,7 +130,7 @@ class plgSystemFirstLastNames extends JPlugin
                     $results = $db->loadRowList();
                 }
                 catch (RuntimeException $e) {
-                    $this->_subject->setError($e->getMessage());
+                    throw new GenericDataException($e->getErrorMsg(), 500);
                     return false;
                 }
 
@@ -98,7 +143,6 @@ class plgSystemFirstLastNames extends JPlugin
                 $name = $data->firstname . ' ' . $data->lastname;
             }
             $data->name = $name;
-
             return true;
         }
 
@@ -108,21 +152,24 @@ class plgSystemFirstLastNames extends JPlugin
     /**
      * Adds additional fields to the user editing form for logs e-mail notifications
      *
-     * @param   JForm  $form  The form to be altered.
+     * @param   Form  $form  The form to be altered.
      * @param   mixed  $data  The associated data for the form.
      *
      * @return  boolean
      */
-    public function onContentPrepareForm($form, $data)
-    {
-        if (!($form instanceof JForm)){
-            $this->_subject->setError('JERROR_NOT_A_FORM');
+    public function onContentPrepareForm(Event $event) {
+        $args    = $event->getArguments();
+        $form    = $args[0];
+        $data    = $args[1];
+
+        if (!($form instanceof \Joomla\CMS\Form\Form)) {
+            throw new GenericDataException(Text::_('JERROR_NOT_A_FORM'), 500);
             return false;
         }
 
         // Check we are manipulating a valid form.
         $name = $form->getName();
-        if (!in_array($name, array('com_admin.profile', 'com_users.user', 'com_users.profile', 'com_users.registration'))) {
+        if (!in_array($name, ['com_admin.profile', 'com_users.user', 'com_users.profile', 'com_users.registration'])) {
             return true;
         }
 
@@ -153,7 +200,7 @@ class plgSystemFirstLastNames extends JPlugin
 
         $form_string = file_get_contents($form_file);
 
-        $form_xml    = new SimpleXMLElement($form_string);
+        $form_xml    = new \SimpleXMLElement($form_string);
 
         $first_name                = current($form_xml->xpath('//field[@name="name"]'));
         $first_name['name']        = "firstname";
@@ -204,15 +251,15 @@ class plgSystemFirstLastNames extends JPlugin
      */
     public function onUserAfterSave($user, $isNew, $success, $msg)
     {
-        $user_id = JArrayHelper::getValue($user, 'id', 0, 'int');
+        $user_id = ArrayHelper::getValue($user, 'id', 0, 'int');
 
         if ($user_id && $success) {
-            $db = JFactory::getDbo();
+            $db = Factory::getDbo();
             // On activation, the lastname field won't be present within the data,
             // so retrieve it from the profile form and set it:
             if (!isset($user['lastname'])) {
                 // Get profile:
-                $db = JFactory::getDbo();
+                $db = Factory::getDbo();
                 $db->setQuery(
                     'SELECT profile_key, profile_value FROM #__user_profiles' .
                     ' WHERE user_id = '.(int) $user_id." AND profile_key LIKE 'firstlastnames.%'" .
@@ -222,7 +269,7 @@ class plgSystemFirstLastNames extends JPlugin
 
                 // Check for a database error.
                 if ($db->getErrorNum()) {
-                    $this->_subject->setError($db->getErrorMsg());
+                    throw new GenericDataException($db->getErrorMsg(), 500);
                     return false;
                 }
                 $user['firstname'] = $results[0][1];
@@ -262,7 +309,7 @@ class plgSystemFirstLastNames extends JPlugin
 
             }
             catch (RuntimeException $e) {
-                $this->_subject->setError($e->getMessage());
+                throw new GenericDataException($e->getErrorMsg(), 500);
                 return false;
             }
         }
@@ -287,11 +334,11 @@ class plgSystemFirstLastNames extends JPlugin
             return false;
         }
 
-        $user_id = JArrayHelper::getValue($user, 'id', 0, 'int');
+        $user_id = ArrayHelper::getValue($user, 'id', 0, 'int');
 
         if ($user_id) {
             try {
-                $db = JFactory::getDbo();
+                $db = Factory::getDbo();
                 $db->setQuery(
                     'DELETE FROM #__user_profiles WHERE user_id = '.$user_id .
                     " AND profile_key LIKE 'firstlastnames.%'"
@@ -300,7 +347,7 @@ class plgSystemFirstLastNames extends JPlugin
                 $db->execute();
             }
             catch (Exception $e) {
-                $this->_subject->setError($e->getMessage());
+                throw new GenericDataException($e->getErrorMsg(), 500);
                 return false;
             }
         }
