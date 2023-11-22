@@ -93,14 +93,13 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
      *
      * @return  boolean
      */
-    public function onContentPrepareData(Event $event) {
-        $args    = $event->getArguments();
-        $context = $args[0];
-        $data    = $args[1];
+    public function onContentPrepareData(Event $event): void
+    {
+        [$context, $data] = array_values($event->getArguments());
 
         // Check we are manipulating a valid form.
         if (!in_array($context, ['com_users.profile', 'com_users.user', 'com_users.registration', 'com_admin.profile'])) {
-            return true;
+            return;
         }
         // Profile view only shows name as it's not a form, so unless it's
         // overidden in a template (possible), we don't want to split the names
@@ -131,7 +130,7 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
                 }
                 catch (RuntimeException $e) {
                     throw new GenericDataException($e->getErrorMsg(), 500);
-                    return false;
+                    return;
                 }
 
                 $data->firstname = $results[0][1];
@@ -143,10 +142,10 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
                 $name = $data->firstname . ' ' . $data->lastname;
             }
             $data->name = $name;
-            return true;
+            return;
         }
 
-        return true;
+        return;
     }
 
     /**
@@ -157,20 +156,19 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
      *
      * @return  boolean
      */
-    public function onContentPrepareForm(Event $event) {
-        $args    = $event->getArguments();
-        $form    = $args[0];
-        $data    = $args[1];
+    public function onContentPrepareForm(Event $event): void
+    {
+        [$form, $data] = array_values($event->getArguments());
 
         if (!($form instanceof \Joomla\CMS\Form\Form)) {
             throw new GenericDataException(Text::_('JERROR_NOT_A_FORM'), 500);
-            return false;
+            return;
         }
 
         // Check we are manipulating a valid form.
         $name = $form->getName();
         if (!in_array($name, ['com_admin.profile', 'com_users.user', 'com_users.profile', 'com_users.registration'])) {
-            return true;
+            return;
         }
 
         switch ($name) {
@@ -236,7 +234,7 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
         $target_dom->parentNode->appendChild($insert_dom);
         // Update the form. 'replace' param is unintuitive and needs to be false.
         $form->load($form_xml, false);
-        return true;
+        return;
     }
 
     /**
@@ -249,8 +247,9 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
      *
      * @return  boolean
      */
-    public function onUserAfterSave($user, $isNew, $success, $msg)
+    public function onUserAfterSave(Event $event): void
     {
+        [$user, $isnew, $success, $msg] = array_values($event->getArguments());
         $user_id = ArrayHelper::getValue($user, 'id', 0, 'int');
 
         if ($user_id && $success) {
@@ -270,7 +269,7 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
                 // Check for a database error.
                 if ($db->getErrorNum()) {
                     throw new GenericDataException($db->getErrorMsg(), 500);
-                    return false;
+                    return;
                 }
                 $user['firstname'] = $results[0][1];
                 $user['lastname']  = $results[1][1];
@@ -310,11 +309,11 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
             }
             catch (RuntimeException $e) {
                 throw new GenericDataException($e->getErrorMsg(), 500);
-                return false;
+                return;
             }
         }
 
-        return true;
+        return;
     }
 
     /**
@@ -328,10 +327,12 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
      *
      * @return  boolean
      */
-    public function onUserAfterDelete($user, $success, $msg)
+    public function onUserAfterDelete(Event $event): void
     {
+        [$user, $success, $msg] = array_values($event->getArguments());
+
         if (!$success) {
-            return false;
+            return;
         }
 
         $user_id = ArrayHelper::getValue($user, 'id', 0, 'int');
@@ -348,10 +349,10 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
             }
             catch (Exception $e) {
                 throw new GenericDataException($e->getErrorMsg(), 500);
-                return false;
+                return;
             }
         }
 
-        return true;
+        return;
     }
 }
