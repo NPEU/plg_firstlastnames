@@ -88,8 +88,7 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
     /**
      * Runs on content preparation
      *
-     * @param   string  $context  The context for the data
-     * @param   object  $data     An object containing the data for the form.
+     * @param   Event  $event
      *
      * @return  boolean
      */
@@ -151,8 +150,7 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
     /**
      * Adds additional fields to the user editing form for logs e-mail notifications
      *
-     * @param   Form  $form  The form to be altered.
-     * @param   mixed  $data  The associated data for the form.
+     * @param   Event  $event
      *
      * @return  boolean
      */
@@ -240,10 +238,7 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
     /**
      * Utility method to act on a user after it has been saved.
      *
-     * @param   array    $user     Holds the new user data.
-     * @param   boolean  $isNew    True if a new user is stored.
-     * @param   boolean  $success  True if user was successfully stored in the database.
-     * @param   string   $msg      Message.
+     * @param   Event  $event
      *
      * @return  boolean
      */
@@ -321,9 +316,7 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
      *
      * Method is called after user data is deleted from the database
      *
-     * @param   array    $user     Holds the user data
-     * @param   boolean  $success  True if user was successfully stored in the database
-     * @param   string   $msg      Message
+     * @param   Event  $event
      *
      * @return  boolean
      */
