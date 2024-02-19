@@ -33,9 +33,9 @@
 
     <namespace path="src">NPEU\Plugin\System\FirstLastNames</namespace>
     <files>
-        <folder>services</folder>
         <folder plugin="firstlastnames">src</folder>
         <folder>language</folder>
+        <folder>services</folder>
         <folder>sql</folder>
     </files>
 
