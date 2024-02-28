@@ -254,18 +254,24 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
             if (!isset($user['lastname'])) {
                 // Get profile:
                 $db = Factory::getDbo();
-                $db->setQuery(
-                    'SELECT profile_key, profile_value FROM #__user_profiles' .
-                    ' WHERE user_id = '.(int) $user_id." AND profile_key LIKE 'firstlastnames.%'" .
-                    ' ORDER BY ordering'
-                );
-                $results = $db->loadRowList();
+
 
                 // Check for a database error.
-                if ($db->getErrorNum()) {
+                try
+                {
+                    $db->setQuery(
+                        'SELECT profile_key, profile_value FROM #__user_profiles' .
+                        ' WHERE user_id = '.(int) $user_id." AND profile_key LIKE 'firstlastnames.%'" .
+                        ' ORDER BY ordering'
+                    );
+                    $results = $db->loadRowList();
+                }
+                catch (RuntimeException $e)
+                {
                     throw new GenericDataException($db->getErrorMsg(), 500);
                     return;
                 }
+
                 $user['firstname'] = $results[0][1];
                 $user['lastname']  = $results[1][1];
             }
