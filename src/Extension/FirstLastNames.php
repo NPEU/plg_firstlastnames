@@ -172,7 +172,7 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
         switch ($name) {
             case 'com_users.registration':
                 $fieldset  = 'default';
-                $form_file = JPATH_COMPONENT . '/dels/forms/registration.xml';
+                $form_file = JPATH_COMPONENT . '/forms/registration.xml';
                 break;
             case 'com_users.profile':
                 $fieldset = 'core';
