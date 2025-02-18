@@ -158,7 +158,7 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
     {
         [$form, $data] = array_values($event->getArguments());
 
-        if (!($form instanceof \Joomla\CMS\Form\Form)) {
+        if ($form && !($form instanceof \Joomla\CMS\Form\Form)) {
             throw new GenericDataException(Text::_('JERROR_NOT_A_FORM'), 500);
             return;
         }
