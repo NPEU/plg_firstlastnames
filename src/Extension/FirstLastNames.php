@@ -13,6 +13,7 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Event\Event;
@@ -260,7 +261,7 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
                 {
                     $db->setQuery(
                         'SELECT profile_key, profile_value FROM #__user_profiles' .
-                        ' WHERE user_id = '.(int) $user_id." AND profile_key LIKE 'firstlastnames.%'" .
+                        ' WHERE user_id = ' . (int) $user_id . " AND profile_key LIKE 'firstlastnames.%'" .
                         ' ORDER BY ordering'
                     );
                     $results = $db->loadRowList();
@@ -276,7 +277,7 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
             }
 
             try {
-                // Concatenate name and lastname ad update table:
+                // Concatenate name and lastname and update table:
                 $fullname = trim($user['firstname']) . ' ' . trim($user['lastname']);
                 $sql = 'UPDATE #__users SET name = "' . $fullname . '" WHERE id = '.$user_id . ';';
 
@@ -286,9 +287,9 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
                     throw new Exception($db->getErrorMsg());
                 }
 
-                // Delete profile:
+                // Delete profile (not 100% sure why I'm doing this here...):
                 $db->setQuery(
-                    'DELETE FROM #__user_profiles WHERE user_id = '.$user_id .
+                    'DELETE FROM #__user_profiles WHERE user_id = ' . $user_id .
                     " AND profile_key LIKE 'firstlastnames.%'"
                 );
 
@@ -305,7 +306,6 @@ class FirstLastNames extends CMSPlugin implements SubscriberInterface
                 if (!$db->execute()) {
                     throw new Exception($db->getErrorMsg());
                 }
-
             }
             catch (RuntimeException $e) {
                 throw new GenericDataException($e->getErrorMsg(), 500);
